@@ -31,3 +31,41 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets / local environment ###
+.env
+.env.*
+!.env.example
+
+### Local-only Spring config ###
+application-local.properties
+src/main/resources/application-local.properties
+
+### Keys / certificates ###
+*.pem
+*.key
+*.p12
+*.jks
+
+### Logs ###
+*.log
+logs/
+
+### Secrets / local environment ###
+.env
+.env.*
+!.env.example
+
+### Local-only Spring config ###
+application-local.properties
+src/main/resources/application-local.properties
+
+### Keys / certificates ###
+*.pem
+*.key
+*.p12
+*.jks
+
+### Logs ###
+*.log
+logs/
