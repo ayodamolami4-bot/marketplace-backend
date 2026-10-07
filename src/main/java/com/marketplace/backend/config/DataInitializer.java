@@ -312,13 +312,21 @@ public class DataInitializer {
             long price,
             int stock
     ) {
-        boolean exists = productRepository.findByVendorIdOrderByCreatedAtDesc(
+        long priceInKobo = Math.multiplyExact(price, 100L);
+
+        Product existing = productRepository.findByVendorIdOrderByCreatedAtDesc(
                         vendor.getId()
                 )
                 .stream()
-                .anyMatch(product -> product.getName().equalsIgnoreCase(name));
+                .filter(product -> product.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
 
-        if (exists) {
+        if (existing != null) {
+            if (existing.getPrice() != priceInKobo) {
+                existing.setPrice(priceInKobo);
+                productRepository.save(existing);
+            }
             return;
         }
 
@@ -327,7 +335,7 @@ public class DataInitializer {
         product.setCategory(category);
         product.setName(name);
         product.setDescription(description);
-        product.setPrice(price);
+        product.setPrice(priceInKobo);
         product.setStockQuantity(stock);
         product.setStatus(ProductStatus.APPROVED);
 
