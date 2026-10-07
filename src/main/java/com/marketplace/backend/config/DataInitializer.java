@@ -205,6 +205,35 @@ public class DataInitializer {
                     32000,
                     20
             );
+            ensureProduct(productRepository, finalVendor, electronics, "Smart Watch", "Everyday smart watch with activity tracking and notifications.", 52000, 22);
+            ensureProduct(productRepository, finalVendor, electronics, "Portable Bluetooth Speaker", "Compact wireless speaker with clear sound and long battery life.", 27000, 28);
+            ensureProduct(productRepository, finalVendor, electronics, "Fast Charge Power Bank", "High-capacity portable charger for phones and accessories.", 24000, 34);
+            ensureProduct(productRepository, finalVendor, electronics, "USB-C Charging Hub", "Multi-port charging hub for phones, tablets and accessories.", 19500, 26);
+
+            ensureProduct(productRepository, finalVendor, fashion, "Everyday Tote Bag", "Roomy everyday tote with a clean structured shape.", 26000, 24);
+            ensureProduct(productRepository, finalVendor, fashion, "Casual Polo Shirt", "Soft everyday polo shirt with a relaxed fit.", 18000, 36);
+            ensureProduct(productRepository, finalVendor, fashion, "Leather Crossbody Bag", "Compact crossbody bag for daily essentials.", 34000, 19);
+            ensureProduct(productRepository, finalVendor, fashion, "Minimal Wrist Watch", "Simple analogue wrist watch with a versatile everyday design.", 41000, 17);
+
+            ensureProduct(productRepository, finalVendor, home, "Cotton Bedsheet Set", "Soft bedsheet set designed for everyday comfort.", 24500, 21);
+            ensureProduct(productRepository, finalVendor, home, "Storage Basket Set", "Woven storage baskets for bedrooms, shelves and living spaces.", 16500, 30);
+            ensureProduct(productRepository, finalVendor, home, "Ceramic Dinner Set", "Modern ceramic dinnerware set for everyday meals.", 36000, 16);
+            ensureProduct(productRepository, finalVendor, home, "Electric Kettle", "Quick-boil electric kettle for tea, coffee and kitchen use.", 23000, 27);
+
+            ensureProduct(productRepository, finalVendor, beauty, "Vitamin C Face Serum", "Lightweight brightening serum for a simple daily routine.", 14500, 42);
+            ensureProduct(productRepository, finalVendor, beauty, "Hydrating Body Lotion", "Daily moisturizing lotion with a light, non-greasy finish.", 12000, 38);
+            ensureProduct(productRepository, finalVendor, beauty, "Grooming Kit", "Compact personal grooming kit for home and travel.", 20500, 25);
+            ensureProduct(productRepository, finalVendor, beauty, "Daily Sunscreen SPF 50", "Lightweight daily sunscreen for broad-spectrum protection.", 13500, 32);
+
+            ensureProduct(productRepository, finalVendor, groceries, "Vegetable Cooking Oil 5L", "Family-size vegetable cooking oil for everyday meals.", 21500, 31);
+            ensureProduct(productRepository, finalVendor, groceries, "Breakfast Cereal Pack", "Crunchy breakfast cereal pack for quick morning meals.", 9500, 45);
+            ensureProduct(productRepository, finalVendor, groceries, "Tomato Paste Carton", "Multi-pack tomato paste carton for regular home cooking.", 15500, 29);
+            ensureProduct(productRepository, finalVendor, groceries, "Instant Noodles Family Pack", "Family-size pack of instant noodles for quick meals.", 12500, 50);
+
+            ensureProduct(productRepository, finalVendor, sports, "Yoga Mat", "Non-slip exercise mat for stretching, yoga and floor workouts.", 17000, 33);
+            ensureProduct(productRepository, finalVendor, sports, "Resistance Band Set", "Multi-resistance band set for home and gym training.", 14500, 37);
+            ensureProduct(productRepository, finalVendor, sports, "Insulated Sports Bottle", "Reusable insulated bottle for workouts and daily hydration.", 11000, 41);
+            ensureProduct(productRepository, finalVendor, sports, "Adjustable Dumbbell Pair", "Compact adjustable dumbbell pair for strength training.", 68000, 14);
 
             ensureDeliveryZone(deliveryZoneRepository);
             ensurePickupLocation(pickupLocationRepository);
