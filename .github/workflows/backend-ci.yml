@@ -11,6 +11,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: marketplace
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d marketplace"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/marketplace
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ci-only-marketplace-jwt-secret-that-is-long-enough-for-tests
+      CLOUDINARY_ENABLED: "false"
+      PAYSTACK_SECRET_KEY: ci-demo-secret
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
