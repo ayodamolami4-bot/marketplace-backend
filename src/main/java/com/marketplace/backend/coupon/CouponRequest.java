@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.Instant;
 
@@ -13,6 +14,7 @@ public class CouponRequest {
 
     @NotBlank
     @Size(max = 50)
+    @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9_-]{1,49}", message = "Coupon code must be 2 to 50 letters, digits, hyphens or underscores")
     private String code;
 
     @Min(1)

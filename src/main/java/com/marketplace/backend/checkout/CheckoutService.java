@@ -23,6 +23,7 @@ import com.marketplace.backend.user.AddressRepository;
 import com.marketplace.backend.user.User;
 import com.marketplace.backend.user.UserRepository;
 import com.marketplace.backend.vendor.Vendor;
+import com.marketplace.backend.coupon.CouponDiscountService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -50,6 +51,7 @@ public class CheckoutService {
     private final PaymentService paymentService;
     private final CheckoutIdempotencyService idempotencyService;
     private final TransactionTemplate transactionTemplate;
+    private final CouponDiscountService couponDiscountService;
 
     public CheckoutService(
             CartItemRepository cartItemRepository,
@@ -62,7 +64,8 @@ public class CheckoutService {
             PaymentRepository paymentRepository,
             PaymentService paymentService,
             CheckoutIdempotencyService idempotencyService,
-            PlatformTransactionManager transactionManager
+            PlatformTransactionManager transactionManager,
+            CouponDiscountService couponDiscountService
     ) {
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
@@ -74,6 +77,7 @@ public class CheckoutService {
         this.paymentRepository = paymentRepository;
         this.paymentService = paymentService;
         this.idempotencyService = idempotencyService;
+        this.couponDiscountService = couponDiscountService;
         this.transactionTemplate =
                 new TransactionTemplate(transactionManager);
     }
@@ -301,7 +305,10 @@ public class CheckoutService {
         }
 
         long shippingFee = 0;
-        long discountAmount = 0;
+        Map<UUID, Long> vendorSubtotals = new LinkedHashMap<>();
+        groups.forEach((vendorId, group) -> vendorSubtotals.put(vendorId, group.items.stream().mapToLong(PreparedItem::subtotal).sum()));
+        Map<UUID, Long> vendorDiscounts = couponDiscountService.discounts(request.getCouponCode(), vendorSubtotals);
+        long discountAmount = vendorDiscounts.values().stream().mapToLong(Long::longValue).sum();
 
         long totalAmount =
                 subtotal
@@ -408,8 +415,9 @@ public class CheckoutService {
 
             subOrder.setSubtotal(vendorSubtotal);
             subOrder.setShippingFee(0);
-            subOrder.setDiscountAmount(0);
-            subOrder.setTotalAmount(vendorSubtotal);
+            long vendorDiscount = vendorDiscounts.getOrDefault(group.vendor.getId(), 0L);
+            subOrder.setDiscountAmount(vendorDiscount);
+            subOrder.setTotalAmount(vendorSubtotal - vendorDiscount);
 
             SubOrder savedSubOrder =
                     subOrderRepository.save(subOrder);

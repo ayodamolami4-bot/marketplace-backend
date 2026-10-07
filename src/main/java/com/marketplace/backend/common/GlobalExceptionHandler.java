@@ -11,9 +11,27 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.security.access.AccessDeniedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleMalformedBody(HttpMessageNotReadableException exception) {
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(new ApiErrorResponse.ErrorDetail("VALIDATION_ERROR", "Request contains malformed JSON or an invalid field type")));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleOversizedUpload(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.status(413).body(new ApiErrorResponse(new ApiErrorResponse.ErrorDetail("FILE_TOO_LARGE", "Image exceeds the upload size limit")));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(AccessDeniedException exception) {
+        return ResponseEntity.status(403).body(new ApiErrorResponse(new ApiErrorResponse.ErrorDetail("FORBIDDEN", "You do not have permission for this operation")));
+    }
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
