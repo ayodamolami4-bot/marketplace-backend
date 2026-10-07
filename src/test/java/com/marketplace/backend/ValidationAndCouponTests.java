@@ -103,6 +103,27 @@ class ValidationAndCouponTests {
         verify(repository, never()).save(any());
     }
 
+    @Test void orderResponsesKeepSavedDiscountedTotals() {
+        var orders = mock(OrderRepository.class); var subOrders = mock(SubOrderRepository.class);
+        var items = mock(OrderItemRepository.class); var vendors = mock(VendorRepository.class);
+        var service = new OrderService(orders, subOrders, items, mock(UserRepository.class), vendors);
+        var user = new User(); user.setId(UUID.randomUUID());
+        var vendor = new Vendor(); vendor.setId(UUID.randomUUID()); vendor.setBusinessName("Demo Store");
+        var order = new Order(); order.setId(UUID.randomUUID()); order.setUser(user); order.setStatus(OrderStatus.CONFIRMED);
+        order.setSubtotal(100000); order.setShippingFee(0); order.setDiscountAmount(20000); order.setTotalAmount(80000);
+        var subOrder = new SubOrder(); subOrder.setId(UUID.randomUUID()); subOrder.setOrder(order); subOrder.setVendor(vendor);
+        subOrder.setStatus(OrderStatus.PENDING_FULFILLMENT); subOrder.setSubtotal(100000); subOrder.setDiscountAmount(20000); subOrder.setTotalAmount(80000);
+        when(orders.findById(order.getId())).thenReturn(Optional.of(order));
+        when(subOrders.findByOrderId(order.getId())).thenReturn(java.util.List.of(subOrder));
+        when(vendors.findByUserId(user.getId())).thenReturn(Optional.of(vendor));
+        when(subOrders.findByVendorIdOrderByCreatedAtDesc(vendor.getId())).thenReturn(java.util.List.of(subOrder));
+        var customer = service.getCustomerOrder(user.getId(), order.getId());
+        assertEquals(80000, customer.totalAmount()); assertEquals(20000, customer.discountAmount());
+        assertEquals(80000, customer.subOrders().getFirst().totalAmount());
+        var seller = service.getVendorOrders(user.getId()).getFirst();
+        assertEquals(80000, seller.totalAmount()); assertEquals(20000, seller.discountAmount());
+    }
+
     @Test void customerCannotReadAnotherCustomersOrder() {
         var repository = mock(OrderRepository.class);
         var service = new OrderService(repository, mock(SubOrderRepository.class), mock(OrderItemRepository.class), mock(UserRepository.class), mock(VendorRepository.class));

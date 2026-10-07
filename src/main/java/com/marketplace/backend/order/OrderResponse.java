@@ -8,7 +8,11 @@ public record OrderResponse(
         UUID id,
         String status,
         Instant createdAt,
-        List<SubOrderResponse> subOrders
+        List<SubOrderResponse> subOrders,
+        long subtotal,
+        long shippingFee,
+        long discountAmount,
+        long totalAmount
 ) {
 
     public record SubOrderResponse(
@@ -16,7 +20,10 @@ public record OrderResponse(
             String vendorName,
             String status,
             List<ItemResponse> items,
-            String trackingNote
+            String trackingNote,
+            long subtotal,
+            long discountAmount,
+            long totalAmount
     ) {
     }
 

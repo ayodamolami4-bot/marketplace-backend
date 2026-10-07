@@ -143,7 +143,10 @@ public class OrderService {
                             subOrder.getVendor().getBusinessName(),
                             subOrder.getStatus().name().toLowerCase(),
                             responseItems,
-                            null
+                            null,
+                            subOrder.getSubtotal(),
+                            subOrder.getDiscountAmount(),
+                            subOrder.getTotalAmount()
                     )
             );
         }
@@ -152,7 +155,11 @@ public class OrderService {
                 order.getId(),
                 order.getStatus().name().toLowerCase(),
                 order.getCreatedAt(),
-                responseSubOrders
+                responseSubOrders,
+                order.getSubtotal(),
+                order.getShippingFee(),
+                order.getDiscountAmount(),
+                order.getTotalAmount()
         );
     }
 
@@ -177,7 +184,10 @@ public class OrderService {
                 subOrder.getVendor().getId(),
                 subOrder.getVendor().getBusinessName(),
                 subOrder.getStatus().name().toLowerCase(),
-                responseItems
+                responseItems,
+                subOrder.getSubtotal(),
+                subOrder.getDiscountAmount(),
+                subOrder.getTotalAmount()
         );
     }
 
@@ -264,7 +274,10 @@ public class OrderService {
             UUID vendorId,
             String vendorName,
             String status,
-            List<ItemResponse> items
+            List<ItemResponse> items,
+            long subtotal,
+            long discountAmount,
+            long totalAmount
     ) {
         public record ItemResponse(
                 UUID productId,
