@@ -107,8 +107,8 @@ class ValidationAndCouponTests {
         var orders = mock(OrderRepository.class); var subOrders = mock(SubOrderRepository.class);
         var items = mock(OrderItemRepository.class); var vendors = mock(VendorRepository.class);
         var service = new OrderService(orders, subOrders, items, mock(UserRepository.class), vendors);
-        var user = new User(); user.setId(UUID.randomUUID());
-        var vendor = new Vendor(); vendor.setId(UUID.randomUUID()); vendor.setBusinessName("Demo Store");
+        var user = mock(User.class); when(user.getId()).thenReturn(UUID.randomUUID());
+        var vendor = mock(Vendor.class); when(vendor.getId()).thenReturn(UUID.randomUUID()); when(vendor.getBusinessName()).thenReturn("Demo Store");
         var order = new Order(); order.setId(UUID.randomUUID()); order.setUser(user); order.setStatus(OrderStatus.CONFIRMED);
         order.setSubtotal(100000); order.setShippingFee(0); order.setDiscountAmount(20000); order.setTotalAmount(80000);
         var subOrder = new SubOrder(); subOrder.setId(UUID.randomUUID()); subOrder.setOrder(order); subOrder.setVendor(vendor);
