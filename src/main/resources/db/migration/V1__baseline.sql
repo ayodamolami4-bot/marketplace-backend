@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict lVmA3azebUlyOYsMsivOWu9SyqmdxSDu0Qz4NDqABs8eQPV7YKnbZS6MthDwasf
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -23,7 +22,7 @@ SET row_security = off;
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA public;
+CREATE SCHEMA IF NOT EXISTS public;
 
 
 --
@@ -1153,5 +1152,4 @@ ALTER TABLE ONLY public.categories
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lVmA3azebUlyOYsMsivOWu9SyqmdxSDu0Qz4NDqABs8eQPV7YKnbZS6MthDwasf
 
