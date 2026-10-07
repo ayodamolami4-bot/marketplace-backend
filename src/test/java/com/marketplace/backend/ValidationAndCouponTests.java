@@ -8,6 +8,8 @@ import com.marketplace.backend.vendor.*;
 import com.marketplace.backend.checkout.*;
 import tools.jackson.databind.json.JsonMapper;
 import com.marketplace.backend.auth.RegisterRequest;
+import com.marketplace.backend.auth.ActiveAccountValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
 import jakarta.validation.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +20,16 @@ import static org.mockito.Mockito.*;
 
 class ValidationAndCouponTests {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+    @Test void suspendedAccountsCannotUsePreviouslyIssuedTokens() {
+        UUID id = UUID.randomUUID(); var users = mock(UserRepository.class); User user = new User();
+        when(users.findById(id)).thenReturn(Optional.of(user));
+        var validator = new ActiveAccountValidator(users);
+        Jwt token = Jwt.withTokenValue("synthetic-test-token").header("alg", "HS256").subject(id.toString()).build();
+        assertFalse(validator.validate(token).hasErrors());
+        user.setStatus(UserStatus.SUSPENDED); assertTrue(validator.validate(token).hasErrors());
+        user.setStatus(UserStatus.ACTIVE); assertFalse(validator.validate(token).hasErrors());
+        when(users.findById(id)).thenReturn(Optional.empty()); assertTrue(validator.validate(token).hasErrors());
+    }
     @Test void signupRejectsNumericNamesAndPasswordsBeyondBcryptByteLimit() {
         RegisterRequest request = new RegisterRequest(); request.setEmail("test@example.com"); request.setName("1234"); request.setPassword("á".repeat(40));
         assertFalse(validator.validate(request).isEmpty());
