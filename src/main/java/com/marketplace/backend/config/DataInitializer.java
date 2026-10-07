@@ -63,9 +63,12 @@ public class DataInitializer {
                 );
             }
 
-            Role customerRole = roleRepository.findByName(RoleName.CUSTOMER).orElseThrow();
-            Role vendorRole = roleRepository.findByName(RoleName.VENDOR).orElseThrow();
-            Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow();
+            Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+                    .orElseThrow();
+            Role vendorRole = roleRepository.findByName(RoleName.VENDOR)
+                    .orElseThrow();
+            Role adminRole = roleRepository.findByName(RoleName.ADMIN)
+                    .orElseThrow();
 
             User admin = ensureUser(
                     userRepository,
@@ -74,104 +77,48 @@ public class DataInitializer {
                     "Marketplace Admin",
                     adminPassword
             );
+
             ensureUserRole(userRoleRepository, admin, customerRole);
             ensureUserRole(userRoleRepository, admin, adminRole);
 
-            Vendor groceryVendor = ensureDemoVendor(
+            User demoUser = ensureUser(
                     userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
                     passwordEncoder,
-                    customerRole,
-                    vendorRole,
                     "demo-customer-ada@example.com",
                     "Ada Demo",
-                    userPassword,
-                    "Ada Market",
-                    "Everyday groceries and household food essentials.",
-                    "DEMO_SUB_001"
+                    userPassword
             );
 
-            Vendor electronicsVendor = ensureDemoVendor(
-                    userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
-                    passwordEncoder,
-                    customerRole,
-                    vendorRole,
-                    "demo-vendor-tech@example.com",
-                    "Tobi Tech",
-                    userPassword,
-                    "Nova Tech",
-                    "Phones, audio, charging accessories and everyday technology.",
-                    "DEMO_SUB_002"
-            );
+            ensureUserRole(userRoleRepository, demoUser, customerRole);
+            ensureUserRole(userRoleRepository, demoUser, vendorRole);
 
-            Vendor fashionVendor = ensureDemoVendor(
-                    userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
-                    passwordEncoder,
-                    customerRole,
-                    vendorRole,
-                    "demo-vendor-fashion@example.com",
-                    "Maya Fashion",
-                    userPassword,
-                    "Thread & Sole",
-                    "Clothing, footwear, bags and simple everyday style.",
-                    "DEMO_SUB_003"
-            );
+            Vendor vendor = vendorRepository.findByUserId(demoUser.getId())
+                    .orElseGet(() -> {
+                        Vendor created = new Vendor();
+                        created.setUser(demoUser);
+                        created.setBusinessName("Ada Market");
+                        created.setBusinessDescription(
+                                "A demo multi-category seller for the live marketplace presentation."
+                        );
+                        created.setStatus(VendorStatus.APPROVED);
+                        created.setPaystackSubaccountCode("DEMO_SUB_001");
+                        return vendorRepository.save(created);
+                    });
 
-            Vendor homeVendor = ensureDemoVendor(
-                    userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
-                    passwordEncoder,
-                    customerRole,
-                    vendorRole,
-                    "demo-vendor-home@example.com",
-                    "Ife Home",
-                    userPassword,
-                    "Haven Living",
-                    "Home essentials, kitchen pieces and practical interior goods.",
-                    "DEMO_SUB_004"
-            );
+            if (vendor.getStatus() != VendorStatus.APPROVED) {
+                vendor.setStatus(VendorStatus.APPROVED);
+                vendor = vendorRepository.save(vendor);
+            }
 
-            Vendor beautyVendor = ensureDemoVendor(
-                    userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
-                    passwordEncoder,
-                    customerRole,
-                    vendorRole,
-                    "demo-vendor-beauty@example.com",
-                    "Zara Beauty",
-                    userPassword,
-                    "Glow House",
-                    "Skincare, grooming and personal-care essentials.",
-                    "DEMO_SUB_005"
-            );
+            Vendor finalVendor = vendor;
 
-            Vendor sportsVendor = ensureDemoVendor(
-                    userRepository,
-                    userRoleRepository,
-                    vendorRepository,
-                    financeConfigRepository,
-                    passwordEncoder,
-                    customerRole,
-                    vendorRole,
-                    "demo-vendor-sports@example.com",
-                    "Kola Sports",
-                    userPassword,
-                    "Peak Sports",
-                    "Training, fitness and active-lifestyle essentials.",
-                    "DEMO_SUB_006"
-            );
+            if (financeConfigRepository.findByVendorId(finalVendor.getId()).isEmpty()) {
+                VendorFinanceConfig config = new VendorFinanceConfig();
+                config.setVendor(finalVendor);
+                config.setCommissionPercent(10);
+                config.setPayoutSchedule(PayoutSchedule.WEEKLY);
+                financeConfigRepository.save(config);
+            }
 
             Category electronics = ensureCategory(
                     categoryRepository,
@@ -204,41 +151,89 @@ public class DataInitializer {
                     "Fitness, training and active lifestyle essentials."
             );
 
-            ensureProduct(productRepository, electronicsVendor, electronics, "Wireless Headphones", "Comfortable over-ear wireless headphones for everyday listening.", 45000, 25);
-            ensureProduct(productRepository, electronicsVendor, electronics, "Smart Watch", "Everyday smart watch with activity tracking and notifications.", 52000, 22);
-            ensureProduct(productRepository, electronicsVendor, electronics, "Portable Bluetooth Speaker", "Compact wireless speaker with clear sound and long battery life.", 27000, 28);
-            ensureProduct(productRepository, electronicsVendor, electronics, "Fast Charge Power Bank", "High-capacity portable charger for phones and accessories.", 24000, 34);
-            ensureProduct(productRepository, electronicsVendor, electronics, "USB-C Charging Hub", "Multi-port charging hub for phones, tablets and accessories.", 19500, 26);
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    electronics,
+                    "Wireless Headphones",
+                    "Comfortable over-ear wireless headphones for everyday listening.",
+                    45000,
+                    25
+            );
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    fashion,
+                    "Classic Sneakers",
+                    "Versatile everyday sneakers with a clean, minimal finish.",
+                    38000,
+                    30
+            );
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    home,
+                    "Modern Table Lamp",
+                    "Compact warm-light table lamp for bedrooms and workspaces.",
+                    28000,
+                    18
+            );
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    beauty,
+                    "Skincare Essentials Set",
+                    "A simple daily cleanser, moisturizer and care set.",
+                    22000,
+                    35
+            );
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    groceries,
+                    "Premium Rice 5kg",
+                    "Quality long-grain rice packed for everyday family meals.",
+                    18500,
+                    40
+            );
+            ensureProduct(
+                    productRepository,
+                    finalVendor,
+                    sports,
+                    "Training Backpack",
+                    "Lightweight gym and training backpack with multiple compartments.",
+                    32000,
+                    20
+            );
+            ensureProduct(productRepository, finalVendor, electronics, "Smart Watch", "Everyday smart watch with activity tracking and notifications.", 52000, 22);
+            ensureProduct(productRepository, finalVendor, electronics, "Portable Bluetooth Speaker", "Compact wireless speaker with clear sound and long battery life.", 27000, 28);
+            ensureProduct(productRepository, finalVendor, electronics, "Fast Charge Power Bank", "High-capacity portable charger for phones and accessories.", 24000, 34);
+            ensureProduct(productRepository, finalVendor, electronics, "USB-C Charging Hub", "Multi-port charging hub for phones, tablets and accessories.", 19500, 26);
 
-            ensureProduct(productRepository, fashionVendor, fashion, "Classic Sneakers", "Versatile everyday sneakers with a clean, minimal finish.", 38000, 30);
-            ensureProduct(productRepository, fashionVendor, fashion, "Everyday Tote Bag", "Roomy everyday tote with a clean structured shape.", 26000, 24);
-            ensureProduct(productRepository, fashionVendor, fashion, "Casual Polo Shirt", "Soft everyday polo shirt with a relaxed fit.", 18000, 36);
-            ensureProduct(productRepository, fashionVendor, fashion, "Leather Crossbody Bag", "Compact crossbody bag for daily essentials.", 34000, 19);
-            ensureProduct(productRepository, fashionVendor, fashion, "Minimal Wrist Watch", "Simple analogue wrist watch with a versatile everyday design.", 41000, 17);
+            ensureProduct(productRepository, finalVendor, fashion, "Everyday Tote Bag", "Roomy everyday tote with a clean structured shape.", 26000, 24);
+            ensureProduct(productRepository, finalVendor, fashion, "Casual Polo Shirt", "Soft everyday polo shirt with a relaxed fit.", 18000, 36);
+            ensureProduct(productRepository, finalVendor, fashion, "Leather Crossbody Bag", "Compact crossbody bag for daily essentials.", 34000, 19);
+            ensureProduct(productRepository, finalVendor, fashion, "Minimal Wrist Watch", "Simple analogue wrist watch with a versatile everyday design.", 41000, 17);
 
-            ensureProduct(productRepository, homeVendor, home, "Modern Table Lamp", "Compact warm-light table lamp for bedrooms and workspaces.", 28000, 18);
-            ensureProduct(productRepository, homeVendor, home, "Cotton Bedsheet Set", "Soft bedsheet set designed for everyday comfort.", 24500, 21);
-            ensureProduct(productRepository, homeVendor, home, "Storage Basket Set", "Woven storage baskets for bedrooms, shelves and living spaces.", 16500, 30);
-            ensureProduct(productRepository, homeVendor, home, "Ceramic Dinner Set", "Modern ceramic dinnerware set for everyday meals.", 36000, 16);
-            ensureProduct(productRepository, homeVendor, home, "Electric Kettle", "Quick-boil electric kettle for tea, coffee and kitchen use.", 23000, 27);
+            ensureProduct(productRepository, finalVendor, home, "Cotton Bedsheet Set", "Soft bedsheet set designed for everyday comfort.", 24500, 21);
+            ensureProduct(productRepository, finalVendor, home, "Storage Basket Set", "Woven storage baskets for bedrooms, shelves and living spaces.", 16500, 30);
+            ensureProduct(productRepository, finalVendor, home, "Ceramic Dinner Set", "Modern ceramic dinnerware set for everyday meals.", 36000, 16);
+            ensureProduct(productRepository, finalVendor, home, "Electric Kettle", "Quick-boil electric kettle for tea, coffee and kitchen use.", 23000, 27);
 
-            ensureProduct(productRepository, beautyVendor, beauty, "Skincare Essentials Set", "A simple daily cleanser, moisturizer and care set.", 22000, 35);
-            ensureProduct(productRepository, beautyVendor, beauty, "Vitamin C Face Serum", "Lightweight brightening serum for a simple daily routine.", 14500, 42);
-            ensureProduct(productRepository, beautyVendor, beauty, "Hydrating Body Lotion", "Daily moisturizing lotion with a light, non-greasy finish.", 12000, 38);
-            ensureProduct(productRepository, beautyVendor, beauty, "Grooming Kit", "Compact personal grooming kit for home and travel.", 20500, 25);
-            ensureProduct(productRepository, beautyVendor, beauty, "Daily Sunscreen SPF 50", "Lightweight daily sunscreen for broad-spectrum protection.", 13500, 32);
+            ensureProduct(productRepository, finalVendor, beauty, "Vitamin C Face Serum", "Lightweight brightening serum for a simple daily routine.", 14500, 42);
+            ensureProduct(productRepository, finalVendor, beauty, "Hydrating Body Lotion", "Daily moisturizing lotion with a light, non-greasy finish.", 12000, 38);
+            ensureProduct(productRepository, finalVendor, beauty, "Grooming Kit", "Compact personal grooming kit for home and travel.", 20500, 25);
+            ensureProduct(productRepository, finalVendor, beauty, "Daily Sunscreen SPF 50", "Lightweight daily sunscreen for broad-spectrum protection.", 13500, 32);
 
-            ensureProduct(productRepository, groceryVendor, groceries, "Premium Rice 5kg", "Quality long-grain rice packed for everyday family meals.", 18500, 40);
-            ensureProduct(productRepository, groceryVendor, groceries, "Vegetable Cooking Oil 5L", "Family-size vegetable cooking oil for everyday meals.", 21500, 31);
-            ensureProduct(productRepository, groceryVendor, groceries, "Breakfast Cereal Pack", "Crunchy breakfast cereal pack for quick morning meals.", 9500, 45);
-            ensureProduct(productRepository, groceryVendor, groceries, "Tomato Paste Carton", "Multi-pack tomato paste carton for regular home cooking.", 15500, 29);
-            ensureProduct(productRepository, groceryVendor, groceries, "Instant Noodles Family Pack", "Family-size pack of instant noodles for quick meals.", 12500, 50);
+            ensureProduct(productRepository, finalVendor, groceries, "Vegetable Cooking Oil 5L", "Family-size vegetable cooking oil for everyday meals.", 21500, 31);
+            ensureProduct(productRepository, finalVendor, groceries, "Breakfast Cereal Pack", "Crunchy breakfast cereal pack for quick morning meals.", 9500, 45);
+            ensureProduct(productRepository, finalVendor, groceries, "Tomato Paste Carton", "Multi-pack tomato paste carton for regular home cooking.", 15500, 29);
+            ensureProduct(productRepository, finalVendor, groceries, "Instant Noodles Family Pack", "Family-size pack of instant noodles for quick meals.", 12500, 50);
 
-            ensureProduct(productRepository, sportsVendor, sports, "Training Backpack", "Lightweight gym and training backpack with multiple compartments.", 32000, 20);
-            ensureProduct(productRepository, sportsVendor, sports, "Yoga Mat", "Non-slip exercise mat for stretching, yoga and floor workouts.", 17000, 33);
-            ensureProduct(productRepository, sportsVendor, sports, "Resistance Band Set", "Multi-resistance band set for home and gym training.", 14500, 37);
-            ensureProduct(productRepository, sportsVendor, sports, "Insulated Sports Bottle", "Reusable insulated bottle for workouts and daily hydration.", 11000, 41);
-            ensureProduct(productRepository, sportsVendor, sports, "Adjustable Dumbbell Pair", "Compact adjustable dumbbell pair for strength training.", 68000, 14);
+            ensureProduct(productRepository, finalVendor, sports, "Yoga Mat", "Non-slip exercise mat for stretching, yoga and floor workouts.", 17000, 33);
+            ensureProduct(productRepository, finalVendor, sports, "Resistance Band Set", "Multi-resistance band set for home and gym training.", 14500, 37);
+            ensureProduct(productRepository, finalVendor, sports, "Insulated Sports Bottle", "Reusable insulated bottle for workouts and daily hydration.", 11000, 41);
+            ensureProduct(productRepository, finalVendor, sports, "Adjustable Dumbbell Pair", "Compact adjustable dumbbell pair for strength training.", 68000, 14);
 
             ensureDeliveryZone(deliveryZoneRepository);
             ensurePickupLocation(pickupLocationRepository);
@@ -262,73 +257,16 @@ public class DataInitializer {
             String name,
             String password
     ) {
-        User user = userRepository.findByEmail(email)
+        return userRepository.findByEmail(email)
                 .orElseGet(() -> {
-                    User created = new User();
-                    created.setEmail(email);
-                    return created;
+                    User user = new User();
+                    user.setEmail(email);
+                    user.setName(name);
+                    user.setPasswordHash(passwordEncoder.encode(password));
+                    user.setStatus(UserStatus.ACTIVE);
+                    user.setEmailVerified(true);
+                    return userRepository.save(user);
                 });
-
-        user.setName(name);
-        user.setStatus(UserStatus.ACTIVE);
-        user.setEmailVerified(true);
-
-        if (user.getPasswordHash() == null ||
-                !passwordEncoder.matches(password, user.getPasswordHash())) {
-            user.setPasswordHash(passwordEncoder.encode(password));
-        }
-
-        return userRepository.save(user);
-    }
-
-    private Vendor ensureDemoVendor(
-            UserRepository userRepository,
-            UserRoleRepository userRoleRepository,
-            VendorRepository vendorRepository,
-            VendorFinanceConfigRepository financeConfigRepository,
-            PasswordEncoder passwordEncoder,
-            Role customerRole,
-            Role vendorRole,
-            String email,
-            String userName,
-            String password,
-            String businessName,
-            String businessDescription,
-            String subaccountCode
-    ) {
-        User user = ensureUser(
-                userRepository,
-                passwordEncoder,
-                email,
-                userName,
-                password
-        );
-
-        ensureUserRole(userRoleRepository, user, customerRole);
-        ensureUserRole(userRoleRepository, user, vendorRole);
-
-        Vendor vendor = vendorRepository.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    Vendor created = new Vendor();
-                    created.setUser(user);
-                    return created;
-                });
-
-        vendor.setBusinessName(businessName);
-        vendor.setBusinessDescription(businessDescription);
-        vendor.setStatus(VendorStatus.APPROVED);
-        vendor.setPaystackSubaccountCode(subaccountCode);
-        vendor = vendorRepository.save(vendor);
-
-        if (financeConfigRepository.findByVendorId(vendor.getId()).isEmpty()) {
-            VendorFinanceConfig config = new VendorFinanceConfig();
-            config.setVendor(vendor);
-            config.setCommissionPercent(10);
-            config.setPayoutSchedule(PayoutSchedule.WEEKLY);
-            financeConfigRepository.save(config);
-        }
-
-        return vendor;
     }
 
     private void ensureUserRole(
@@ -376,12 +314,23 @@ public class DataInitializer {
     ) {
         long priceInKobo = Math.multiplyExact(price, 100L);
 
-        Product product = productRepository.findAll()
+        Product existing = productRepository.findByVendorIdOrderByCreatedAtDesc(
+                        vendor.getId()
+                )
                 .stream()
-                .filter(existing -> existing.getName().equalsIgnoreCase(name))
+                .filter(product -> product.getName().equalsIgnoreCase(name))
                 .findFirst()
-                .orElseGet(Product::new);
+                .orElse(null);
 
+        if (existing != null) {
+            if (existing.getPrice() != priceInKobo) {
+                existing.setPrice(priceInKobo);
+                productRepository.save(existing);
+            }
+            return;
+        }
+
+        Product product = new Product();
         product.setVendor(vendor);
         product.setCategory(category);
         product.setName(name);
@@ -389,7 +338,6 @@ public class DataInitializer {
         product.setPrice(priceInKobo);
         product.setStockQuantity(stock);
         product.setStatus(ProductStatus.APPROVED);
-        product.setRejectionReason(null);
 
         productRepository.save(product);
     }
