@@ -10,6 +10,14 @@ import tools.jackson.databind.json.JsonMapper;
 import com.marketplace.backend.auth.RegisterRequest;
 import com.marketplace.backend.auth.ActiveAccountValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import com.marketplace.backend.config.JwtConfig;
+import com.marketplace.backend.auth.JwtService;
+import javax.crypto.spec.SecretKeySpec;
 import jakarta.validation.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +28,19 @@ import static org.mockito.Mockito.*;
 
 class ValidationAndCouponTests {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+    @Test void tokenDecoderRejectsExpiredAndWronglySignedTokens() {
+        var config = new JwtConfig(); var key = new SecretKeySpec(new byte[32], "HmacSHA256");
+        var encoder = config.jwtEncoder(key); var users = mock(UserRepository.class); UUID id = UUID.randomUUID();
+        when(users.findById(id)).thenReturn(Optional.of(new User()));
+        var decoder = config.jwtDecoder(key, users);
+        String valid = new JwtService(encoder).generateToken(id, List.of("CUSTOMER"));
+        assertEquals(id.toString(), decoder.decode(valid).getSubject());
+        byte[] otherKey = new byte[32]; otherKey[0] = 1;
+        assertThrows(JwtException.class, () -> config.jwtDecoder(new SecretKeySpec(otherKey, "HmacSHA256"), users).decode(valid));
+        var claims = JwtClaimsSet.builder().subject(id.toString()).issuedAt(Instant.now().minusSeconds(600)).expiresAt(Instant.now().minusSeconds(120)).build();
+        String expired = encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+        assertThrows(JwtException.class, () -> decoder.decode(expired));
+    }
     @Test void suspendedAccountsCannotUsePreviouslyIssuedTokens() {
         UUID id = UUID.randomUUID(); var users = mock(UserRepository.class); User user = new User();
         when(users.findById(id)).thenReturn(Optional.of(user));
