@@ -1,5 +1,6 @@
 package com.marketplace.backend.vendor;
 
+import com.marketplace.backend.notification.NotificationService;
 import com.marketplace.backend.user.Role;
 import com.marketplace.backend.user.RoleName;
 import com.marketplace.backend.user.RoleRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,17 +24,20 @@ public class VendorService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final NotificationService notificationService;
 
     public VendorService(
             VendorRepository vendorRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
-            UserRoleRepository userRoleRepository
+            UserRoleRepository userRoleRepository,
+            NotificationService notificationService
     ) {
         this.vendorRepository = vendorRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userRoleRepository = userRoleRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -42,26 +47,47 @@ public class VendorService {
     ) {
         User user = getUser(userId);
 
-        if (vendorRepository.existsByUserId(userId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Vendor application already exists"
+        Optional<Vendor> existingVendor =
+                vendorRepository.findByUserId(userId);
+
+        if (existingVendor.isPresent()) {
+            Vendor vendor = existingVendor.get();
+
+            if (vendor.getStatus() != VendorStatus.REJECTED) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Vendor application already exists"
+                );
+            }
+
+            updateApplicationDetails(vendor, request);
+            vendor.setStatus(VendorStatus.PENDING);
+
+            Vendor savedVendor =
+                    vendorRepository.save(vendor);
+
+            notifyAdminsOfApplication(
+                    user,
+                    savedVendor
             );
+
+            return toResponse(savedVendor);
         }
 
         Vendor vendor = new Vendor();
         vendor.setUser(user);
-        vendor.setBusinessName(request.getBusinessName().trim());
 
-        if (request.getBusinessDescription() != null) {
-            vendor.setBusinessDescription(
-                    request.getBusinessDescription().trim()
-            );
-        }
+        updateApplicationDetails(vendor, request);
 
         vendor.setStatus(VendorStatus.PENDING);
 
-        Vendor savedVendor = vendorRepository.save(vendor);
+        Vendor savedVendor =
+                vendorRepository.save(vendor);
+
+        notifyAdminsOfApplication(
+                user,
+                savedVendor
+        );
 
         return toResponse(savedVendor);
     }
@@ -69,7 +95,9 @@ public class VendorService {
     @Transactional
     public List<VendorResponse> getPendingApplications() {
         return vendorRepository
-                .findByStatusOrderByCreatedAtAsc(VendorStatus.PENDING)
+                .findByStatusOrderByCreatedAtAsc(
+                        VendorStatus.PENDING
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -97,34 +125,52 @@ public class VendorService {
             );
         }
 
-        Role vendorRole = roleRepository.findByName(RoleName.VENDOR)
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "VENDOR role is not configured"
-                        )
-                );
+        Role vendorRole =
+                roleRepository.findByName(RoleName.VENDOR)
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "VENDOR role is not configured"
+                                )
+                        );
 
         User user = vendor.getUser();
 
-        boolean alreadyHasVendorRole = userRoleRepository
-                .findByUserId(user.getId())
-                .stream()
-                .anyMatch(userRole ->
-                        userRole.getRole().getName() == RoleName.VENDOR
-                );
+        boolean alreadyHasVendorRole =
+                userRoleRepository
+                        .findByUserId(user.getId())
+                        .stream()
+                        .anyMatch(userRole ->
+                                userRole
+                                        .getRole()
+                                        .getName()
+                                        == RoleName.VENDOR
+                        );
 
         if (!alreadyHasVendorRole) {
             userRoleRepository.save(
-                    new UserRole(user, vendorRole)
+                    new UserRole(
+                            user,
+                            vendorRole
+                    )
             );
         }
 
         vendor.setPaystackSubaccountCode(
                 paystackSubaccountCode.trim()
         );
-        vendor.setStatus(VendorStatus.APPROVED);
 
-        Vendor savedVendor = vendorRepository.save(vendor);
+        vendor.setStatus(
+                VendorStatus.APPROVED
+        );
+
+        Vendor savedVendor =
+                vendorRepository.save(vendor);
+
+        notificationService.createNotification(
+                user,
+                "Seller application approved",
+                "Your seller application has been approved. Seller Center is now available."
+        );
 
         return toResponse(savedVendor);
     }
@@ -140,15 +186,67 @@ public class VendorService {
             );
         }
 
-        vendor.setStatus(VendorStatus.REJECTED);
+        vendor.setStatus(
+                VendorStatus.REJECTED
+        );
 
-        Vendor savedVendor = vendorRepository.save(vendor);
+        Vendor savedVendor =
+                vendorRepository.save(vendor);
+
+        notificationService.createNotification(
+                vendor.getUser(),
+                "Seller application not approved",
+                "Your seller application was not approved. You can update your details and apply again."
+        );
 
         return toResponse(savedVendor);
     }
 
+    private void notifyAdminsOfApplication(
+            User applicant,
+            Vendor vendor
+    ) {
+        List<UserRole> adminRoles =
+                userRoleRepository
+                        .findByRole_Name(
+                                RoleName.ADMIN
+                        );
+
+        for (UserRole adminRole : adminRoles) {
+            notificationService.createNotification(
+                    adminRole.getUser(),
+                    "New seller application",
+                    applicant.getName()
+                            + " submitted a seller application for "
+                            + vendor.getBusinessName()
+                            + "."
+            );
+        }
+    }
+
+    private void updateApplicationDetails(
+            Vendor vendor,
+            VendorApplicationRequest request
+    ) {
+        vendor.setBusinessName(
+                request.getBusinessName()
+                        .trim()
+        );
+
+        if (request.getBusinessDescription() == null) {
+            vendor.setBusinessDescription(null);
+        } else {
+            vendor.setBusinessDescription(
+                    request
+                            .getBusinessDescription()
+                            .trim()
+            );
+        }
+    }
+
     private User getUser(UUID userId) {
-        return userRepository.findById(userId)
+        return userRepository
+                .findById(userId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -158,7 +256,8 @@ public class VendorService {
     }
 
     private Vendor getVendor(UUID vendorId) {
-        return vendorRepository.findById(vendorId)
+        return vendorRepository
+                .findById(vendorId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -167,7 +266,9 @@ public class VendorService {
                 );
     }
 
-    private VendorResponse toResponse(Vendor vendor) {
+    private VendorResponse toResponse(
+            Vendor vendor
+    ) {
         User user = vendor.getUser();
 
         return new VendorResponse(

@@ -39,4 +39,13 @@ public class AdminUserController {
                 adminUserService.suspendUser(userId)
         );
     }
+
+    @PatchMapping("/{userId}/activate")
+    public ResponseEntity<AdminUserResponse> activateUser(
+            @PathVariable UUID userId
+    ) {
+        return ResponseEntity.ok(
+                adminUserService.activateUser(userId)
+        );
+    }
 }

@@ -39,7 +39,32 @@ public class AdminUserService {
     public AdminUserResponse suspendUser(UUID userId) {
         User user = getUser(userId);
 
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only active users can be suspended"
+            );
+        }
+
         user.setStatus(UserStatus.SUSPENDED);
+
+        User savedUser = userRepository.save(user);
+
+        return toResponse(savedUser);
+    }
+
+    @Transactional
+    public AdminUserResponse activateUser(UUID userId) {
+        User user = getUser(userId);
+
+        if (user.getStatus() != UserStatus.SUSPENDED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only suspended users can be activated"
+            );
+        }
+
+        user.setStatus(UserStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
 
