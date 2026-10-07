@@ -747,12 +747,7 @@ public class PaymentService {
 
         PaymentAttempt attempt =
                 new PaymentAttempt();
-
-        attempt.setId(
-                UUID.randomUUID()
-        );
-
-        attempt.setPayment(
+attempt.setPayment(
                 payment
         );
 

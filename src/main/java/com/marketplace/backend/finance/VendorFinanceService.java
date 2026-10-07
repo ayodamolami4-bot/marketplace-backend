@@ -10,6 +10,7 @@ import com.marketplace.backend.vendor.VendorRepository;
 import com.marketplace.backend.vendor.VendorStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class VendorFinanceService {
         this.paymentRepository = paymentRepository;
     }
 
+    @Transactional
     public VendorFinanceResponse getVendorFinance(UUID userId) {
         Vendor vendor = getApprovedVendor(userId);
 
