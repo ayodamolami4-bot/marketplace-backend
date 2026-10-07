@@ -37,6 +37,14 @@ public class OrderController {
                 paymentService;
     }
 
+    @GetMapping("/orders")
+    public ApiListResponse<OrderResponse> getOrders(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        List<OrderResponse> orders = orderService.getCustomerOrders(getUserId(jwt));
+        return new ApiListResponse<>(orders, 1, orders.size(), orders.size());
+    }
+
     @GetMapping("/orders/{id}")
     public OrderResponse getOrder(
             @AuthenticationPrincipal Jwt jwt,

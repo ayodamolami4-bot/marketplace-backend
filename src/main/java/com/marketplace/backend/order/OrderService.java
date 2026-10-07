@@ -36,6 +36,14 @@ public class OrderService {
     }
 
     @Transactional
+    public List<OrderResponse> getCustomerOrders(UUID userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
+
+    @Transactional
     public OrderResponse getCustomerOrder(UUID userId, UUID orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(
