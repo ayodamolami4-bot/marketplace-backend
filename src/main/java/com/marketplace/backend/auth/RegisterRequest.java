@@ -3,11 +3,15 @@ package com.marketplace.backend.auth;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.AssertTrue;
+import java.nio.charset.StandardCharsets;
 
 public class RegisterRequest {
 
     @NotBlank
     @Size(max = 150)
+    @Pattern(regexp = "(?=.*\\p{L})[\\p{L}\\p{M} .'-]+", message = "Name must contain letters and normal name punctuation")
     private String name;
 
     @NotBlank
@@ -18,6 +22,11 @@ public class RegisterRequest {
     @NotBlank
     @Size(min = 8, max = 100)
     private String password;
+
+    @AssertTrue(message = "Password must be at most 72 UTF-8 bytes")
+    public boolean isPasswordWithinBcryptLimit() {
+        return password == null || password.getBytes(StandardCharsets.UTF_8).length <= 72;
+    }
 
     public String getName() {
         return name;

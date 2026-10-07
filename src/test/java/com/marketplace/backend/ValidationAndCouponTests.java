@@ -7,6 +7,7 @@ import com.marketplace.backend.order.*;
 import com.marketplace.backend.vendor.*;
 import com.marketplace.backend.checkout.*;
 import tools.jackson.databind.json.JsonMapper;
+import com.marketplace.backend.auth.RegisterRequest;
 import jakarta.validation.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +18,12 @@ import static org.mockito.Mockito.*;
 
 class ValidationAndCouponTests {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+    @Test void signupRejectsNumericNamesAndPasswordsBeyondBcryptByteLimit() {
+        RegisterRequest request = new RegisterRequest(); request.setEmail("test@example.com"); request.setName("1234"); request.setPassword("á".repeat(40));
+        assertFalse(validator.validate(request).isEmpty());
+        request.setName("Ayo O'Neil"); request.setPassword("a".repeat(72)); assertTrue(validator.validate(request).isEmpty());
+        request.setPassword("a".repeat(73)); assertFalse(validator.validate(request).isEmpty());
+    }
     private AddressRequest address(String city, String state, String country, String phone, String line) {
         return new AddressRequest("Ayo O'Neil", phone, line, city, state, country, "", false);
     }

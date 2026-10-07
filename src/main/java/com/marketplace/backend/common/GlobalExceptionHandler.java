@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
         if (fieldError != null
                 && fieldError.getDefaultMessage() != null
                 && !fieldError.getDefaultMessage().isBlank()) {
-            message = fieldError.getDefaultMessage();
+            message = fieldError.getField() + ": " + fieldError.getDefaultMessage();
         }
 
         return ResponseEntity
