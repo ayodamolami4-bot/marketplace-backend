@@ -316,7 +316,7 @@ public class CheckoutService {
                         - discountAmount;
 
         boolean paystack =
-                paymentMethod == PaymentMethod.PAYSTACK;
+                paymentMethod == PaymentMethod.PAYSTACK && totalAmount > 0;
 
         Order order = new Order();
 
@@ -369,7 +369,7 @@ public class CheckoutService {
 
         payment.setOrder(savedOrder);
         payment.setMethod(paymentMethod);
-        payment.setStatus(PaymentStatus.PENDING);
+        payment.setStatus(totalAmount == 0 ? PaymentStatus.SUCCESS : PaymentStatus.PENDING);
         payment.setAmount(totalAmount);
 
         if (paystack) {
@@ -481,7 +481,7 @@ public class CheckoutService {
                 savedOrder.getId(),
                 savedOrder.getOrderNumber(),
                 responseSubOrders,
-                paystack ? "paystack" : "cod",
+                paymentMethod == PaymentMethod.PAYSTACK ? "paystack" : "cod",
                 paystack,
                 totalAmount,
                 savedPayment.getId(),

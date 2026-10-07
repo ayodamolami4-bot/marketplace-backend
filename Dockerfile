@@ -3,7 +3,7 @@ FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 COPY . .
 
-RUN chmod +x mvnw && ./mvnw -Dtest=ValidationAndCouponTests,DatabaseLockRetryExecutorTests clean package
+RUN chmod +x mvnw && ./mvnw clean package
 
 FROM eclipse-temurin:25-jdk
 

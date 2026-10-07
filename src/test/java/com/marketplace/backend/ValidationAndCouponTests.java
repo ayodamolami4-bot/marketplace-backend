@@ -3,6 +3,10 @@ package com.marketplace.backend;
 import com.marketplace.backend.user.*;
 import com.marketplace.backend.coupon.*;
 import com.marketplace.backend.cart.CartItemRepository;
+import com.marketplace.backend.order.*;
+import com.marketplace.backend.vendor.*;
+import com.marketplace.backend.checkout.*;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.validation.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -57,5 +61,34 @@ class ValidationAndCouponTests {
         when(repository.findById(addressId)).thenReturn(Optional.of(address));
         assertEquals(404, assertThrows(ResponseStatusException.class, () -> service.updateAddress(attackerId, addressId, address("Lagos", "Lagos", "Nigeria", "09012345678", "12 Allen Avenue"))).getStatusCode().value());
         verify(repository, never()).save(any());
+    }
+
+    @Test void customerCannotReadAnotherCustomersOrder() {
+        var repository = mock(OrderRepository.class);
+        var service = new OrderService(repository, mock(SubOrderRepository.class), mock(OrderItemRepository.class), mock(UserRepository.class), mock(VendorRepository.class));
+        User owner = mock(User.class); when(owner.getId()).thenReturn(UUID.randomUUID());
+        Order order = new Order(); order.setUser(owner); UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.of(order));
+        assertEquals(403, assertThrows(ResponseStatusException.class, () -> service.getCustomerOrder(UUID.randomUUID(), id)).getStatusCode().value());
+    }
+
+    @Test void vendorCannotUpdateAnotherVendorsOrder() {
+        var subOrders = mock(SubOrderRepository.class); var vendors = mock(VendorRepository.class);
+        var service = new OrderService(mock(OrderRepository.class), subOrders, mock(OrderItemRepository.class), mock(UserRepository.class), vendors);
+        UUID userId = UUID.randomUUID(), id = UUID.randomUUID(); Vendor attacker = mock(Vendor.class), owner = mock(Vendor.class);
+        when(attacker.getId()).thenReturn(UUID.randomUUID()); when(owner.getId()).thenReturn(UUID.randomUUID());
+        when(vendors.findByUserId(userId)).thenReturn(Optional.of(attacker));
+        SubOrder order = new SubOrder(); order.setVendor(owner); when(subOrders.findById(id)).thenReturn(Optional.of(order));
+        VendorOrderStatusRequest request = new VendorOrderStatusRequest(); request.setStatus("processing");
+        assertEquals(403, assertThrows(ResponseStatusException.class, () -> service.updateVendorOrderStatus(userId, id, request)).getStatusCode().value());
+        verify(subOrders, never()).save(any());
+    }
+
+    @Test void changedCouponCannotReplayDifferentCheckout() {
+        var service = new CheckoutIdempotencyService(mock(CheckoutIdempotencyRepository.class), JsonMapper.builder().build());
+        CheckoutRequest request = new CheckoutRequest(); request.setAddressId(UUID.randomUUID()); request.setDeliveryMethod("delivery"); request.setPaymentMethod("paystack"); request.setCouponCode("AYO10"); UUID user = UUID.randomUUID();
+        String first = service.hashRequest(user, request);
+        request.setCouponCode("ayo10"); assertEquals(first, service.hashRequest(user, request));
+        request.setCouponCode("AYO20"); assertNotEquals(first, service.hashRequest(user, request));
     }
 }

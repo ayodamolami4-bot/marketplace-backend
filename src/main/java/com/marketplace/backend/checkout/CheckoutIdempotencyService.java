@@ -61,7 +61,7 @@ public class CheckoutIdempotencyService {
                         + "|"
                         + normalizePaymentMethod(
                         request.getPaymentMethod()
-                ) + "|" + normalize(request.getCouponCode());
+                ) + "|" + normalize(request.getCouponCode()).toUpperCase(Locale.ROOT);
 
         try {
             byte[] digest =

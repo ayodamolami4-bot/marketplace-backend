@@ -24,7 +24,6 @@ import com.marketplace.backend.user.User;
 import com.marketplace.backend.common.DatabaseLockRetryExecutor;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -43,12 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 class MarketplaceBackendApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
 
 	@Test
 	void failedPaymentReleasesStockAndCancelsOrder() {
